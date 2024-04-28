@@ -1,0 +1,4 @@
+aws_vpc.vpc aws_vpc.main
+aws_subnet.subnet aws_subnet.private
+aws_subnet.subnet-pub aws_subnet.public
+aws_internet_gateway.gateway aws_internet_gateway.main
