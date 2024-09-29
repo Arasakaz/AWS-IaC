@@ -1,0 +1,77 @@
+stages:
+  - init
+  - format
+  - validate
+  - build
+
+variables:
+  RUNNER_TAG: "tertiary"
+  GIT_SUBMODULE_STRATEGY: recursive
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
+      variables:
+        RUNNER_TAG: "tertiary"
+    - if: $CI_COMMIT_BRANCH == "test" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "test"
+      variables:
+        RUNNER_TAG: "secondary"
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+      variables:
+        RUNNER_TAG: "primary"
+
+
+init-job:
+  tags:
+    - $RUNNER_TAG
+  stage: init
+  script:
+    - packer init .
+  artifacts:
+    untracked: false
+    when: on_success
+    paths:
+      - "*.pkr.hcl"
+
+format-job:
+  tags:
+    - $RUNNER_TAG
+  stage: format
+  script:
+    - packer fmt .
+  artifacts:
+    untracked: false
+    when: on_success
+    paths:
+      - "*.pkr.hcl"
+  dependencies:
+    - init-job
+
+validate-job:
+  tags:
+    - $RUNNER_TAG
+  stage: validate
+  script:
+    - packer validate .
+  artifacts:
+    untracked: false
+    when: on_success
+
+    paths:
+      - "*.pkr.hcl"
+  dependencies:
+    - format-job
+
+build-job:
+  tags:
+    - $RUNNER_TAG
+  stage: build
+  script:
+    - chmod +x repalce_ips.sh
+    - ./replace_ips.sh
+    - git submodule update --init --recursive
+    - packer build -debug openvpn-server.pkr.hcl
+  dependencies:
+    - validate-job
+  rules:
+    - when: manual
