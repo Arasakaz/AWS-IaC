@@ -1,0 +1,8 @@
+*.sh
+.terraform
+.terraform.lock
+.*
+!.gitignore
+!runner_init.sh
+!.terraformrc
+errored.tfstate
